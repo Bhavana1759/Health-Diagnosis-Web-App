@@ -108,6 +108,7 @@ elif selected == "❤️ Heart Disease Prediction":
         ("Resting BP", "trestbps"),
         ("Cholesterol", "chol"),
         ("Fasting Blood Sugar", "fbs"),
+         ("Thal", "thal")
     ]
 
     right = [
@@ -117,7 +118,6 @@ elif selected == "❤️ Heart Disease Prediction":
         ("Oldpeak", "oldpeak"),
         ("Slope", "slope"),
         ("Major Vessels", "ca"),
-        ("Thal", "thal"),
     ]
 
     inputs = two_columns(left, right)
@@ -200,3 +200,4 @@ elif selected == "🟨 Hypo-Thyroid Prediction":
     if st.button("Predict Thyroid"):
         result = models['thyroid'].predict([inputs])
         st.success("Hypo-Thyroid Detected" if result[0] == 1 else "No Hypo-Thyroid")
+

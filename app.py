@@ -78,17 +78,17 @@ if selected == "🟦 Diabetes Prediction":
     st.title("Diabetes Prediction")
 
     left = [
-        ("Pregnancies", "preg"),
-        ("Glucose Level", "glucose"),
-        ("Blood Pressure", "bp"),
-        ("Skin Thickness", "skin"),
+        ("Pregnancies (No. of times pregnant)", "preg"),
+        ("Glucose Level (80–130 mg/dL)", "glucose"),
+        ("Blood Pressure (Normal <130/80)", "bp"),
+        ("Skin Thickness (10–30 mm)", "skin"),
     ]
 
     right = [
-        ("Insulin Level", "insulin"),
-        ("BMI", "bmi"),
-        ("Diabetes Pedigree Function", "dpf"),
-        ("Age", "age"),
+        ("Insulin Level (10–25 µU/mL)", "insulin"),
+        ("BMI (18.5–24.9 kg/m²)", "bmi"),
+        ("Diabetes Pedigree Function (0.1–2.5)", "dpf"),
+        ("Age (Years)", "age"),
     ]
 
     Pregnancies, Glucose, BP, Skin, Insulin, BMI, DPF, Age = two_columns(left, right)
@@ -102,22 +102,22 @@ elif selected == "❤️ Heart Disease Prediction":
     st.title("Heart Disease Prediction")
 
     left = [
-        ("Age", "h_age"),
-        ("Sex (1=Male,0=Female)", "h_sex"),
-        ("Chest Pain Type", "cp"),
-        ("Resting BP", "trestbps"),
-        ("Cholesterol", "chol"),
-        ("Fasting Blood Sugar", "fbs"),
-         ("Thal", "thal")
+        ("Age (Years)", "h_age"),
+        ("Sex (1 = Male, 0 = Female)", "h_sex"),
+        ("Chest Pain Type (0–3)", "cp"),
+        ("Resting BP (Ideal <120/80)", "trestbps"),
+        ("Cholesterol (Total <200 mg/dL)", "chol"),
+        ("Fasting Blood Sugar (>120 = 1)", "fbs"),
+        ("Thal (0=Normal,1=Fixed,2=Reversible)", "thal")
     ]
 
     right = [
-        ("Rest ECG", "restecg"),
-        ("Max Heart Rate", "thalach"),
-        ("Exercise Angina", "exang"),
-        ("Oldpeak", "oldpeak"),
-        ("Slope", "slope"),
-        ("Major Vessels", "ca"),
+        ("Rest ECG (0–2)", "restecg"),
+        ("Max Heart Rate (90–190 BPM)", "thalach"),
+        ("Exercise Angina (1=Yes,0=No)", "exang"),
+        ("Oldpeak (0–2 mm)", "oldpeak"),
+        ("Slope (0–2)", "slope"),
+        ("Major Vessels (0–3)", "ca"),
     ]
 
     inputs = two_columns(left, right)
@@ -131,20 +131,31 @@ elif selected == "🟪 Parkinsons Prediction":
     st.title("Parkinson's Disease Prediction")
 
     left = [
-        ("Fo", "fo"), ("Fhi", "fhi"), ("Flo", "flo"),
-        ("Jitter %", "jitterp"), ("Jitter Abs", "jittera"),
-        ("RAP", "rap"), ("PPQ", "ppq"),
-        ("DDP", "ddp"), ("Shimmer", "shim"),
-        ("Shimmer dB", "shimdb"), ("APQ3", "apq3")
+        ("Fo (85–165 Hz)", "fo"),
+        ("Fhi (165–350 Hz)", "fhi"),
+        ("Flo (60–165 Hz)", "flo"),
+        ("Jitter % (0.2–3.5%)", "jitterp"),
+        ("Jitter Abs (0.01–0.1)", "jittera"),
+        ("RAP (0.5–2.5%)", "rap"),
+        ("PPQ (0.5–2.5%)", "ppq"),
+        ("DDP (0.6–7.5%)", "ddp"),
+        ("Shimmer (1–7%)", "shim"),
+        ("Shimmer dB (0.1–1.5)", "shimdb"),
+        ("APQ3 (0.5–5%)", "apq3")
     ]
 
     right = [
-        ("APQ5", "apq5"), ("APQ", "apq"),
-        ("DDA", "dda"), ("NHR", "nhr"),
-        ("HNR", "hnr"), ("RPDE", "rpde"),
-        ("DFA", "dfa"), ("Spread1", "s1"),
-        ("Spread2", "s2"), ("D2", "d2"),
-        ("PPE", "ppe")
+        ("APQ5 (1–6%)", "apq5"),
+        ("APQ (1.5–7%)", "apq"),
+        ("DDA (1–9%)", "dda"),
+        ("NHR (0.11–0.35)", "nhr"),
+        ("HNR (10–25 dB)", "hnr"),
+        ("RPDE (0.3–0.6)", "rpde"),
+        ("DFA (0.5–1.0)", "dfa"),
+        ("Spread1 (0.8–1.7)", "s1"),
+        ("Spread2 (0–4)", "s2"),
+        ("D2 (Dopamine Receptor)", "d2"),
+        ("PPE (0.1–0.3)", "ppe")
     ]
 
     inputs = two_columns(left, right)
@@ -158,19 +169,24 @@ elif selected == "🟩 Lung Cancer Prediction":
     st.title("Lung Cancer Prediction")
 
     left = [
-        ("Gender", "g"), ("Age", "la"),
-        ("Smoking", "sm"), ("Yellow Fingers", "yf"),
-        ("Anxiety", "an"), ("Peer Pressure", "pp"),
-        ("Chronic Disease", "cd"),
-        ("Fatigue", "ft"),
+        ("Gender (1=Male,0=Female)", "g"),
+        ("Age (Years)", "la"),
+        ("Smoking (1=Yes,0=No)", "sm"),
+        ("Yellow Fingers (1=Yes,0=No)", "yf"),
+        ("Anxiety (1=Yes,0=No)", "an"),
+        ("Peer Pressure (1=Yes,0=No)", "pp"),
+        ("Chronic Disease (1=Yes,0=No)", "cd"),
+        ("Fatigue (1=Yes,0=No)", "ft"),
     ]
 
     right = [
-        ("Allergy", "al"), ("Wheezing", "wh"),
-        ("Alcohol", "alc"), ("Coughing", "cg"),
-        ("Shortness of Breath", "sb"),
-        ("Swallowing Difficulty", "sd"),
-        ("Chest Pain", "cp2"),
+        ("Allergy (1=Yes,0=No)", "al"),
+        ("Wheezing (1=Yes,0=No)", "wh"),
+        ("Alcohol (1=Yes,0=No)", "alc"),
+        ("Coughing (1=Yes,0=No)", "cg"),
+        ("Shortness of Breath (1=Yes,0=No)", "sb"),
+        ("Swallowing Difficulty (1=Yes,0=No)", "sd"),
+        ("Chest Pain (1=Yes,0=No)", "cp2"),
     ]
 
     inputs = two_columns(left, right)
@@ -184,15 +200,15 @@ elif selected == "🟨 Hypo-Thyroid Prediction":
     st.title("Hypo-Thyroid Prediction")
 
     left = [
-        ("Age", "t_age"),
-        ("Sex", "t_sex"),
-        ("On Thyroxine", "thy"),
+        ("Age (Years)", "t_age"),
+        ("Sex (1=Male,0=Female)", "t_sex"),
+        ("On Thyroxine (1=Yes,0=No)", "thy"),
     ]
 
     right = [
-        ("TSH", "tsh"),
-        ("T3", "t3"),
-        ("T4", "t4"),
+        ("TSH (0.4–4.0 mIU/L)", "tsh"),
+        ("T3 (80–200 ng/dL)", "t3"),
+        ("T4 (5–12 µg/dL)", "t4"),
     ]
 
     inputs = two_columns(left, right)
@@ -200,4 +216,3 @@ elif selected == "🟨 Hypo-Thyroid Prediction":
     if st.button("Predict Thyroid"):
         result = models['thyroid'].predict([inputs])
         st.success("Hypo-Thyroid Detected" if result[0] == 1 else "No Hypo-Thyroid")
-

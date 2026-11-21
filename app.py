@@ -1,218 +1,243 @@
-import streamlit as st
-import pickle
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.net.URL;
+import java.util.*;
+import java.util.List;
 
-# ---------------- Page Config ----------------
-st.set_page_config(page_title="Disease Prediction", page_icon="⚕️", layout="wide")
+public class App extends JFrame {
 
-# ---------------- Hide Streamlit UI ----------------
-st.markdown("""
-<style>
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
-</style>
-""", unsafe_allow_html=True)
+    private static final String BG_URL = "https://pwc.com";
+    private BufferedImage backgroundImage;
 
-# ---------------- Background Image ----------------
-background_image_url = "https://www.strategyand.pwc.com/m1/en/strategic-foresight/sector-strategies/healthcare/ai-powered-healthcare-solutions/img01-section1.jpg"
+    private final JComboBox<String> diseaseSelector;
+    private final JLabel titleLabel;
+    private final JPanel leftColumn;
+    private final JPanel rightColumn;
+    private final JButton predictButton;
+    private final JLabel resultLabel;
+    private final List<JTextField> inputFields = new ArrayList<>();
 
-st.markdown(f"""
-<style>
-[data-testid="stAppViewContainer"] {{
-    background-image: url({background_image_url});
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-}}
-[data-testid="stAppViewContainer"]::before {{
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-}}
-h1,h2,h3,p,label {{
-    color: white !important;
-}}
-.stNumberInput input {{
-    background: white;
-    color: black;
-}}
-</style>
-""", unsafe_allow_html=True)
+    private static class DiseaseConfig {
+        String title;
+        String buttonText;
+        String[] leftLabels;
+        String[] rightLabels;
 
-# ---------------- Helper Functions ----------------
-def display_input(label, key):
-    return st.number_input(label, key=key, step=1)
+        DiseaseConfig(String title, String buttonText, String[] leftLabels, String[] rightLabels) {
+            this.title = title;
+            this.buttonText = buttonText;
+            this.leftLabels = leftLabels;
+            this.rightLabels = rightLabels;
+        }
+    }
 
-def two_columns(left, right):
-    col1, col2 = st.columns(2)
-    values = []
-    with col1:
-        for label, key in left:
-            values.append(display_input(label, key))
-    with col2:
-        for label, key in right:
-            values.append(display_input(label, key))
-    return values
+    private final Map<String, DiseaseConfig> configs = new LinkedHashMap<>();
 
-# ---------------- Load Models ----------------
-models = {
-    'diabetes': pickle.load(open('Models/diabetes_model.sav', 'rb')),
-    'heart': pickle.load(open('Models/heart_disease_model.sav', 'rb')),
-    'parkinsons': pickle.load(open('Models/parkinsons_model.sav', 'rb')),
-    'lung': pickle.load(open('Models/lungs_disease_model.sav', 'rb')),
-    'thyroid': pickle.load(open('Models/Thyroid_model.sav', 'rb'))
-}
+    public App() {
+        setTitle("Disease Prediction");
+        setSize(1050, 750);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
 
-# ---------------- Disease Selection ----------------
-selected = st.selectbox("Select Disease", [
-    "🟦 Diabetes Prediction",
-    "❤️ Heart Disease Prediction",
-    "🟪 Parkinsons Prediction",
-    "🟩 Lung Cancer Prediction",
-    "🟨 Hypo-Thyroid Prediction"
-])
+        loadBackgroundImage();
+        initConfigs();
 
-# ================= Diabetes =================
-if selected == "🟦 Diabetes Prediction":
-    st.title("Diabetes Prediction")
+        // Main Background Panel with Dark Overlay
+        JPanel mainPanel = new JPanel(new BorderLayout(0, 20)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (backgroundImage != null) {
+                    g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+                } else {
+                    g.setColor(new Color(20, 30, 48));
+                    g.fillRect(0, 0, getWidth(), getHeight());
+                }
+                g.setColor(new Color(0, 0, 0, 140)); // rgba(0,0,0,0.55) overlay
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        mainPanel.setBorder(new EmptyBorder(30, 60, 30, 60));
 
-    left = [
-        ("Pregnancies (No. of times pregnant)", "preg"),
-        ("Glucose Level (80–130 mg/dL)", "glucose"),
-        ("Blood Pressure (Normal <130/80)", "bp"),
-        ("Skin Thickness (10–30 mm)", "skin"),
-    ]
+        // Top Section: Selector + Title
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
+        topPanel.setOpaque(false);
 
-    right = [
-        ("Insulin Level (10–25 µU/mL)", "insulin"),
-        ("BMI (18.5–24.9 kg/m²)", "bmi"),
-        ("Diabetes Pedigree Function (0.1–2.5)", "dpf"),
-        ("Age (Years)", "age"),
-    ]
+        JLabel selectLabel = new JLabel("Select Disease");
+        selectLabel.setForeground(Color.WHITE);
+        selectLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        selectLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-    Pregnancies, Glucose, BP, Skin, Insulin, BMI, DPF, Age = two_columns(left, right)
+        diseaseSelector = new JComboBox<>(configs.keySet().toArray(new String[0]));
+        diseaseSelector.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        diseaseSelector.setFont(new Font("SansSerif", Font.PLAIN, 15));
+        diseaseSelector.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-    if st.button("Predict Diabetes"):
-        result = models['diabetes'].predict([[Pregnancies, Glucose, BP, Skin, Insulin, BMI, DPF, Age]])
-        st.success("Diabetic" if result[0] == 1 else "Not Diabetic")
+        titleLabel = new JLabel("Diabetes Prediction");
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 30));
+        titleLabel.setBorder(new EmptyBorder(20, 0, 10, 0));
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-# ================= Heart =================
-elif selected == "❤️ Heart Disease Prediction":
-    st.title("Heart Disease Prediction")
+        topPanel.add(selectLabel);
+        topPanel.add(Box.createVerticalStrut(6));
+        topPanel.add(diseaseSelector);
+        topPanel.add(titleLabel);
 
-    left = [
-        ("Age (Years)", "h_age"),
-        ("Sex (1 = Male, 0 = Female)", "h_sex"),
-        ("Chest Pain Type (0–3)", "cp"),
-        ("Resting BP (Ideal <120/80)", "trestbps"),
-        ("Cholesterol (Total <200 mg/dL)", "chol"),
-        ("Fasting Blood Sugar (>120 = 1)", "fbs"),
-        ("Thal (0=Normal,1=Fixed,2=Reversible)", "thal")
-    ]
+        // Center Section: Two-Column Form inside Transparent ScrollPane
+        JPanel columnsPanel = new JPanel(new GridLayout(1, 2, 40, 0));
+        columnsPanel.setOpaque(false);
 
-    right = [
-        ("Rest ECG (0–2)", "restecg"),
-        ("Max Heart Rate (90–190 BPM)", "thalach"),
-        ("Exercise Angina (1=Yes,0=No)", "exang"),
-        ("Oldpeak (0–2 mm)", "oldpeak"),
-        ("Slope (0–2)", "slope"),
-        ("Major Vessels (0–3)", "ca"),
-    ]
+        leftColumn = new JPanel();
+        leftColumn.setLayout(new BoxLayout(leftColumn, BoxLayout.Y_AXIS));
+        leftColumn.setOpaque(false);
 
-    inputs = two_columns(left, right)
+        rightColumn = new JPanel();
+        rightColumn.setLayout(new BoxLayout(rightColumn, BoxLayout.Y_AXIS));
+        rightColumn.setOpaque(false);
 
-    if st.button("Predict Heart Disease"):
-        result = models['heart'].predict([inputs])
-        st.success("Heart Disease Detected" if result[0] == 1 else "No Heart Disease")
+        columnsPanel.add(leftColumn);
+        columnsPanel.add(rightColumn);
 
-# ================= Parkinsons =================
-elif selected == "🟪 Parkinsons Prediction":
-    st.title("Parkinson's Disease Prediction")
+        JScrollPane scrollPane = new JScrollPane(columnsPanel);
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.setBorder(null);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-    left = [
-        ("Fo (85–165 Hz)", "fo"),
-        ("Fhi (165–350 Hz)", "fhi"),
-        ("Flo (60–165 Hz)", "flo"),
-        ("Jitter % (0.2–3.5%)", "jitterp"),
-        ("Jitter Abs (0.01–0.1)", "jittera"),
-        ("RAP (0.5–2.5%)", "rap"),
-        ("PPQ (0.5–2.5%)", "ppq"),
-        ("DDP (0.6–7.5%)", "ddp"),
-        ("Shimmer (1–7%)", "shim"),
-        ("Shimmer dB (0.1–1.5)", "shimdb"),
-        ("APQ3 (0.5–5%)", "apq3")
-    ]
+        // Bottom Section: Predict Button + Result Banner
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
+        bottomPanel.setOpaque(false);
 
-    right = [
-        ("APQ5 (1–6%)", "apq5"),
-        ("APQ (1.5–7%)", "apq"),
-        ("DDA (1–9%)", "dda"),
-        ("NHR (0.11–0.35)", "nhr"),
-        ("HNR (10–25 dB)", "hnr"),
-        ("RPDE (0.3–0.6)", "rpde"),
-        ("DFA (0.5–1.0)", "dfa"),
-        ("Spread1 (0.8–1.7)", "s1"),
-        ("Spread2 (0–4)", "s2"),
-        ("D2 (Dopamine Receptor)", "d2"),
-        ("PPE (0.1–0.3)", "ppe")
-    ]
+        predictButton = new JButton("Predict Diabetes");
+        predictButton.setFont(new Font("SansSerif", Font.BOLD, 15));
+        predictButton.setBackground(new Color(0, 168, 107));
+        predictButton.setForeground(Color.WHITE);
+        predictButton.setFocusPainted(false);
+        predictButton.setBorder(new EmptyBorder(10, 24, 10, 24));
+        predictButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        predictButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-    inputs = two_columns(left, right)
+        resultLabel = new JLabel(" ");
+        resultLabel.setOpaque(true);
+        resultLabel.setBackground(new Color(0, 168, 107, 220));
+        resultLabel.setForeground(Color.WHITE);
+        resultLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+        resultLabel.setBorder(new EmptyBorder(12, 16, 12, 16));
+        resultLabel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
+        resultLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        resultLabel.setVisible(false);
 
-    if st.button("Predict Parkinson's"):
-        result = models['parkinsons'].predict([inputs])
-        st.success("Parkinson's Detected" if result[0] == 1 else "No Parkinson's")
+        bottomPanel.add(predictButton);
+        bottomPanel.add(Box.createVerticalStrut(15));
+        bottomPanel.add(resultLabel);
 
-# ================= Lung Cancer =================
-elif selected == "🟩 Lung Cancer Prediction":
-    st.title("Lung Cancer Prediction")
+        mainPanel.add(topPanel, BorderLayout.NORTH);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
 
-    left = [
-        ("Gender (1=Male,0=Female)", "g"),
-        ("Age (Years)", "la"),
-        ("Smoking (1=Yes,0=No)", "sm"),
-        ("Yellow Fingers (1=Yes,0=No)", "yf"),
-        ("Anxiety (1=Yes,0=No)", "an"),
-        ("Peer Pressure (1=Yes,0=No)", "pp"),
-        ("Chronic Disease (1=Yes,0=No)", "cd"),
-        ("Fatigue (1=Yes,0=No)", "ft"),
-    ]
+        setContentPane(mainPanel);
 
-    right = [
-        ("Allergy (1=Yes,0=No)", "al"),
-        ("Wheezing (1=Yes,0=No)", "wh"),
-        ("Alcohol (1=Yes,0=No)", "alc"),
-        ("Coughing (1=Yes,0=No)", "cg"),
-        ("Shortness of Breath (1=Yes,0=No)", "sb"),
-        ("Swallowing Difficulty (1=Yes,0=No)", "sd"),
-        ("Chest Pain (1=Yes,0=No)", "cp2"),
-    ]
+        // Event Listeners
+        diseaseSelector.addActionListener(e -> renderForm());
+        predictButton.addActionListener(e -> runPrediction());
 
-    inputs = two_columns(left, right)
+        renderForm();
+    }
 
-    if st.button("Predict Lung Cancer"):
-        result = models['lung'].predict([inputs])
-        st.success("Lung Cancer Detected" if result[0] == 1 else "No Lung Cancer")
+    private void loadBackgroundImage() {
+        try {
+            backgroundImage = ImageIO.read(new URL(BG_URL));
+        } catch (Exception ignored) {
+            // Falls back to dark navy gradient if offline
+        }
+    }
 
-# ================= Thyroid =================
-elif selected == "🟨 Hypo-Thyroid Prediction":
-    st.title("Hypo-Thyroid Prediction")
+    private void initConfigs() {
+        configs.put("Diabetes Prediction", new DiseaseConfig(
+                "Diabetes Prediction",
+                "Predict Diabetes",
+                new String[]{
+                        "Pregnancies (No. of times pregnant)",
+                        "Glucose Level (80–130 mg/dL)",
+                        "Blood Pressure (Normal <130/80)",
+                        "Skin Thickness (10–30 mm)"
+                },
+                new String[]{
+                        "Insulin Level (10–25 µU/mL)",
+                        "BMI (18.5–24.9 kg/m²)",
+                        "Diabetes Pedigree Function (0.1–2.5)",
+                        "Age (Years)"
+                }
+        ));
 
-    left = [
-        ("Age (Years)", "t_age"),
-        ("Sex (1=Male,0=Female)", "t_sex"),
-        ("On Thyroxine (1=Yes,0=No)", "thy"),
-    ]
+        configs.put("Heart Disease Prediction", new DiseaseConfig(
+                "Heart Disease Prediction",
+                "Predict Heart Disease",
+                new String[]{
+                        "Age (Years)",
+                        "Sex (1 = Male, 0 = Female)",
+                        "Chest Pain Type (0–3)",
+                        "Resting BP (Ideal <120/80)",
+                        "Cholesterol (Total <200 mg/dL)",
+                        "Fasting Blood Sugar (>120 = 1)",
+                        "Thal (0=Normal,1=Fixed,2=Reversible)"
+                },
+                new String[]{
+                        "Rest ECG (0–2)",
+                        "Max Heart Rate (90–190 BPM)",
+                        "Exercise Angina (1=Yes,0=No)",
+                        "Oldpeak (0–2 mm)",
+                        "Slope (0–2)",
+                        "Major Vessels (0–3)"
+                }
+        ));
 
-    right = [
-        ("TSH (0.4–4.0 mIU/L)", "tsh"),
-        ("T3 (80–200 ng/dL)", "t3"),
-        ("T4 (5–12 µg/dL)", "t4"),
-    ]
+        configs.put("Parkinsons Prediction", new DiseaseConfig(
+                "Parkinson's Disease Prediction",
+                "Predict Parkinson's",
+                new String[]{
+                        "Fo (85–165 Hz)", "Fhi (165–350 Hz)", "Flo (60–165 Hz)",
+                        "Jitter % (0.2–3.5%)", "Jitter Abs (0.01–0.1)", "RAP (0.5–2.5%)",
+                        "PPQ (0.5–2.5%)", "DDP (0.6–7.5%)", "Shimmer (1–7%)",
+                        "Shimmer dB (0.1–1.5)", "APQ3 (0.5–5%)"
+                },
+                new String[]{
+                        "APQ5 (1–6%)", "APQ (1.5–7%)", "DDA (1–9%)", "NHR (0.11–0.35)",
+                        "HNR (10–25 dB)", "RPDE (0.3–0.6)", "DFA (0.5–1.0)",
+                        "Spread1 (0.8–1.7)", "Spread2 (0–4)", "D2 (Dopamine Receptor)", "PPE (0.1–0.3)"
+                }
+        ));
 
-    inputs = two_columns(left, right)
+        configs.put("Lung Cancer Prediction", new DiseaseConfig(
+                "Lung Cancer Prediction",
+                "Predict Lung Cancer",
+                new String[]{
+                        "Gender (1=Male,0=Female)", "Age (Years)", "Smoking (1=Yes,0=No)",
+                        "Yellow Fingers (1=Yes,0=No)", "Anxiety (1=Yes,0=No)",
+                        "Peer Pressure (1=Yes,0=No)", "Chronic Disease (1=Yes,0=No)", "Fatigue (1=Yes,0=No)"
+                },
+                new String[]{
+                        "Allergy (1=Yes,0=No)", "Wheezing (1=Yes,0=No)", "Alcohol (1=Yes,0=No)",
+                        "Coughing (1=Yes,0=No)", "Shortness of Breath (1=Yes,0=No)",
+                        "Swallowing Difficulty (1=Yes,0=No)", "Chest Pain (1=Yes,0=No)"
+                }
+        ));
 
-    if st.button("Predict Thyroid"):
-        result = models['thyroid'].predict([inputs])
-        st.success("Hypo-Thyroid Detected" if result[0] == 1 else "No Hypo-Thyroid")
+        configs.put("Hypo-Thyroid Prediction", new DiseaseConfig(
+                "Hypo-Thyroid Prediction",
+                "Predict Thyroid",
+                new String[]{
+                        "Age (Years)", "Sex (1=Male,0=Female)", "On Thyroxine (1=Yes,0=No)"
+                },
+                new String[]{
+                        "TSH (0.4–4.0 mIU/L)", "T3 (80–200 ng/dL)", "T4 (5–12 µg/dL)"
+                }
+        ));
+    }
+

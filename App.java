@@ -240,4 +240,112 @@ public class App extends JFrame {
                 }
         ));
     }
+    private void renderForm() {
+String selected = (String) diseaseSelector.getSelectedItem();
+DiseaseConfig cfg = configs.get(selected);
+titleLabel.setText(cfg.title);
+predictButton.setText(cfg.buttonText);
+resultLabel.setVisible(false);
+leftColumn.removeAll();
+rightColumn.removeAll();
+inputFields.clear();
+for (String label : cfg.leftLabels) {
+addInputRow(leftColumn, label);
+}
+for (String label : cfg.rightLabels) {
+addInputRow(rightColumn, label);
+}
+leftColumn.revalidate();
+leftColumn.repaint();
+rightColumn.revalidate();
+rightColumn.repaint();
+}
+private void addInputRow(JPanel column, String labelText) {
+JLabel lbl = new JLabel(labelText);
+lbl.setForeground(Color.WHITE);
+lbl.setFont(new Font("SansSerif", Font.PLAIN, 14));
+lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+JTextField field = new JTextField("0");
+field.setBackground(Color.WHITE);
+field.setForeground(Color.BLACK);
+field.setFont(new Font("SansSerif", Font.PLAIN, 15));
+field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+field.setBorder(BorderFactory.createCompoundBorder(
+BorderFactory.createLineBorder(Color.LIGHT_GRAY),
+new EmptyBorder(4, 8, 4, 8)
+));
+field.setAlignmentX(Component.LEFT_ALIGNMENT);
+inputFields.add(field);
+column.add(lbl);
+column.add(Box.createVerticalStrut(5));
+column.add(field);
+column.add(Box.createVerticalStrut(14));
+}
+private void runPrediction() {
+try {
+double[] values = new double[inputFields.size()];
+for (int i = 0; i < inputFields.size(); i++) {
+values[i] = Double.parseDouble(inputFields.get(i).getText().trim());
+}
+String selected = (String) diseaseSelector.getSelectedItem();
+boolean positive = evaluateModel(selected, values);
+String output = switch (selected) {
+case "Diabetes Prediction" -> positive ? "Diabetic" : "Not Diabetic";
+case "Heart Disease Prediction" -> positive ? "Heart Disease Detected" : "No Heart Disease";
+case "Parkinsons Prediction" -> positive ? "Parkinson's Detected" : "No Parkinson's";
+case "Lung Cancer Prediction" -> positive ? "Lung Cancer Detected" : "No Lung Cancer";
+case "Hypo-Thyroid Prediction" -> positive ? "Hypo-Thyroid Detected" : "No Hypo-Thyroid";
+default -> "Unknown";
+};
+resultLabel.setBackground(positive ? new Color(217, 83, 79, 230) : new Color(0, 168, 107, 230));
+resultLabel.setText(output);
+resultLabel.setVisible(true);
+} catch (NumberFormatException ex) {
+resultLabel.setBackground(new Color(217, 83, 79, 230));
+resultLabel.setText("Please enter valid numeric values in all fields.");
+resultLabel.setVisible(true);
+}
+}
+// Pure-Java Logistic Scoring / Clinical Threshold Evaluator
+// Replace weights below with your exported Scikit-learn model coefficients if desired
+private boolean evaluateModel(String disease, double[] x) {
+return switch (disease) {
+case "Diabetes Prediction" -> {
+// Features: [Pregnancies, Glucose, BP, Skin, Insulin, BMI, DPF, Age]
+double z = -8.40 + (0.12 * x[0]) + (0.035 * x[1]) - (0.013 * x[2])
++ (0.001 * x[3]) - (0.001 * x[4]) + (0.089 * x[5]) + (0.94 * x[6]) + (0.014 * x[7]);
+yield sigmoid(z) >= 0.5;
+}
+case "Heart Disease Prediction" -> {
+// Features: [Age, Sex, CP, Trestbps, Chol, FBS, Thal, RestECG, Thalach, Exang, Oldpeak, Slope, CA]
+double z = -1.20 + (0.01 * x[0]) - (0.85 * x[1]) + (0.65 * x[2]) - (0.01 * x[3])
+- (0.004 * x[4]) + (0.10 * x[5]) - (0.55 * x[6]) + (0.30 * x[7])
++ (0.022 * x[8]) - (0.75 * x[9]) - (0.45 * x[10]) + (0.45 * x[11]) - (0.65 * x[12]);
+yield sigmoid(z) >= 0.5;
+}
+case "Parkinsons Prediction" -> {
+// Evaluates key vocal jitter/shimmer/spread biomarkers
+double z = -3.5 + (0.45 * x[3]) + (12.0 * x[4]) + (0.35 * x[8]) + (1.8 * x[18]) + (4.5 * x[21]);
+yield sigmoid(z) >= 0.5;
+}
+case "Lung Cancer Prediction" -> {
+// Sum of risk factors & symptoms (Smoking, Yellow Fingers, Coughing, Shortness of Breath, Chest Pain)
+double symptomScore = x[2] + x[3] + x[4] + x[5] + x[6] + x[7] + x[8]
++ x[9] + x[10] + x[11] + x[12] + x[13] + x[14];
+yield (symptomScore >= 7) || (x[1] > 55 && x[2] == 1 && symptomScore >= 5);
+}
+case "Hypo-Thyroid Prediction" -> {
+// Elevated TSH (> 4.5 mIU/L) with low T3/T4 indicates Hypothyroidism
+yield x[3] > 4.5 || (x[3] > 3.5 && x[5] < 5.0);
+}
+default -> false;
+};
+}
+private double sigmoid(double z) {
+return 1.0 / (1.0 + Math.exp(-z));
+}
+public static void main(String[] args) {
+SwingUtilities.invokeLater(() -> new App().setVisible(true));
+}
+}
 
